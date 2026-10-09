@@ -1,0 +1,174 @@
+<style>
+    body {
+        margin: 0;
+        overflow: hidden;
+        background: #87ceeb;
+        cursor: crosshair;
+        user-select: none;
+        touch-action: none;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        body {
+            background: #1f3a4d;
+        }
+        #ui {
+            color: #eef6fa;
+        }
+        #reset {
+            background: #2e5670;
+            color: #eef6fa;
+        }
+    }
+
+    canvas {
+        display: block;
+    }
+
+    #ui {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        left: 15px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        font: bold 28px sans-serif;
+        color: #333;
+        pointer-events: none;
+    }
+
+    #speed {
+        font-size: 18px;
+        font-weight: 600;
+        opacity: 0.8;
+    }
+
+    #reset {
+        margin-left: auto;
+        pointer-events: auto;
+        cursor: pointer;
+        font: bold 16px sans-serif;
+        padding: 10px 18px;
+        border: 0;
+        border-radius: 8px;
+        background: white;
+        color: #333;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    }
+
+    #reset:focus-visible {
+        outline: 3px solid #333;
+        outline-offset: 2px;
+    }
+</style>
+
+<div id="ui">
+    <span>Score: <span id="score">0</span></span>
+    <span id="speed">Speed: 1.0x</span>
+    <button id="reset" type="button">Reset</button>
+</div>
+
+<canvas id="c"></canvas>
+
+<script>
+    const cvs = document.getElementById('c');
+    const ctx = cvs.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const speedEl = document.getElementById('speed');
+    const resetBtn = document.getElementById('reset');
+
+    const BASE_SPEED = 4;
+    const MAX_SPEED = BASE_SPEED * 2.5;
+    const SPEED_STEP = BASE_SPEED * 0.1;
+
+    let w, h;
+    let flies = [];
+    let score = 0;
+    let audioCtx;
+
+    function maxSpeed() {
+        return Math.min(BASE_SPEED + Math.floor(score / 10) * SPEED_STEP, MAX_SPEED);
+    }
+
+    function updateUI() {
+        scoreEl.textContent = score;
+        const mult = maxSpeed() / BASE_SPEED;
+        speedEl.textContent = 'Speed: ' + mult.toFixed(1) + 'x' + (maxSpeed() >= MAX_SPEED ? ' (max)' : '');
+    }
+
+    function resetGame() {
+        flies = [];
+        score = 0;
+        updateUI();
+    }
+
+    function resize() {
+        w = cvs.width = window.innerWidth;
+        h = cvs.height = window.innerHeight;
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    function playSplat() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended'){
+            audioCtx.resume();
+        }
+
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.1);
+
+        gain.gain.setValueAtTime(1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.1);
+    }
+
+    function spawn() {
+        if(flies.length < 15){
+            const s = maxSpeed();
+            flies.push({
+                x: Math.random() * w,
+                y: Math.random() * h,
+                vx: (Math.random() - 0.5) * s * 1.25,
+                vy: (Math.random() - 0.5) * s * 1.25,
+                size: 15 + Math.random() * 10
+            });
+        }
+        setTimeout(spawn, 600);
+    }
+    spawn();
+
+    function loop() {
+        ctx.clearRect(0, 0, w, h);
+        const limit = maxSpeed();
+
+        flies.forEach(f => {
+            const jitter = 1.5 * (limit / BASE_SPEED);
+            f.vx += (Math.random() - 0.5) * jitter;
+            f.vy += (Math.random() - 0.5) * jitter;
+
+            let speed = Math.hypot(f.vx, f.vy);
+            if(speed > limit) {
+                f.vx *= limit / speed;
+                f.vy *= limit / speed;
+            }
+            f.x += f.vx;
+            f.y += f.vy;
+
+            
+        })
+    }
+
+</script>
