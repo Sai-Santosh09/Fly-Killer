@@ -167,8 +167,44 @@
             f.x += f.vx;
             f.y += f.vy;
 
-            
-        })
-    }
+            if(f.x < 0 || f.x > w) f.vx *= -1;
+            if(f.y < 0 || f.y > h) f.vy *= -1;
 
+            ctx.fillStyle = '#111';
+            ctx.beginPath();
+            ctx.arc(f.x, f.y, f.size / 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.beginPath();
+            ctx.arc(f.x - f.size / 2.5, f.y - f.size / 2.5, f.size / 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(f.x + f.size / 2.5, f.y - f.size / 2.5, f.size / 2, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        requestAnimationFrame(loop);
+    }
+    loop();
+
+    window.addeventListener('pointerdown', (e) => {
+        if(e.target === resetBtn) return;
+
+        let hit = false;
+        for(let i = flies.length - 1;i >= 0;i--){
+            let f = flies[i];
+            if(Math.hypot(f.x - e.clientX, f.y - e.clientY) < f.size * 2) {
+                flies.splice(i, 1);
+                score++;
+                hit = true;
+            }
+        }
+        if(hit){
+            updateUI();
+            playSplat();
+        }
+    });
+
+    resetBtn.addEventListener('click', resetGame);
+    updateUI();
 </script>
