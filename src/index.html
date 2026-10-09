@@ -3,7 +3,6 @@
         margin: 0;
         overflow: hidden;
         background: #87ceeb;
-        cursor: crosshair;
         user-select: none;
         touch-action: none;
     }
@@ -34,7 +33,7 @@
         align-items: center;
         gap: 16px;
         font: bold 28px sans-serif;
-        color: #333;
+        color: #000;
         pointer-events: none;
     }
 
@@ -187,7 +186,7 @@
     }
     loop();
 
-    window.addeventListener('pointerdown', (e) => {
+    window.addEventListener('pointerdown', (e) => {
         if(e.target === resetBtn) return;
 
         let hit = false;
